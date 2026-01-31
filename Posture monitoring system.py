@@ -6,6 +6,9 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import matplotlib.pyplot as plt
 import numpy as np
+import psutil
+from psutil import Process
+import os
 
 # ____CONFIG
 
@@ -160,8 +163,14 @@ if __name__=="__main__":
     detector=vision.PoseLandmarker.create_from_options(options)
     cap=cv2.VideoCapture(0)
     fps=int(cap.get(cv2.CAP_PROP_FPS)) or 30
+    
+    # ______________ PERFORMANCE: INITIALIZE
+    process = Process(os.getpid())
+    prev_frame_time = 0
 
     while True:
+               # ____ PERFORMANCE: START TIMER
+        start_time_ms = time.time() * 1000
         ok,img=cap.read()
         if not ok:
             continue
@@ -246,6 +255,28 @@ if __name__=="__main__":
                     b2.append(abs(d2)>THRESH_TORSO_ANGLE)
                     b3.append(False)
 
+          # _______ PERFORMANCE: END TIMER
+        end_time_ms = time.time() * 1000
+        execution_time = end_time_ms - start_time_ms  # ms
+
+        # RAM usage (MB)
+        memory_usage = process.memory_info().rss / 1024 / 1024
+
+        # FPS calculation
+        new_frame_time = time.time()
+        if prev_frame_time != 0:
+            fps_perf = 1 / (new_frame_time - prev_frame_time)
+        else:
+            fps_perf = 0
+        prev_frame_time = new_frame_time
+
+        # Print objective data (FOR EXPERIMENTS & EVALUATION)
+        print(
+            f"FPS: {int(fps_perf)} | "
+            f"Time: {execution_time:.2f} ms | "
+            f"RAM: {memory_usage:.2f} MB"
+        )
+
         cv2.imshow("Posture Monitor",img)
         key=cv2.waitKey(5)&0xFF
 
@@ -263,4 +294,5 @@ if __name__=="__main__":
     detector.close()
     cap.release()
     cv2.destroyAllWindows()
+
     show_graph()
