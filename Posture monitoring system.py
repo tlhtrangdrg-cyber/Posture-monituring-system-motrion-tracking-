@@ -10,6 +10,7 @@ import psutil
 from psutil import Process
 import os
 
+#version 3
 # ____CONFIG
 
 CALIBRATION_DURATION = 5
@@ -88,7 +89,11 @@ def draw_skeleton(img, lm, w, h, color, mode="FRONT"):
         pts[i] = (int(p.x*w), int(p.y*h))
         cv2.circle(img, pts[i], 3, color, -1)
 
-    connections = [(11,12),(11,23),(12,24),(23,24)] if mode=="FRONT" else POSE_CONNECTIONS
+    connections = (
+        [(11,12),(11,23),(12,24),(23,24)] 
+        if mode=="FRONT" else POSE_CONNECTIONS
+    )
+    
     for a,b in connections:
         cv2.line(img, pts[a], pts[b], color, 2)
 
@@ -108,11 +113,17 @@ def show_graph():
     axs[0].plot(t_series,v1,color="red")
     axs[0].axhline(THRESH_SHOULDER,ls="--",alpha=0.5)
     axs[0].axhline(-THRESH_SHOULDER,ls="--",alpha=0.5)
+    if mode_used == "SIDE":
+        axs[0].axhline(THRESH_NECK_ANGLE, ls="--", alpha=0.5)
+        axs[0].axhline(-THRESH_NECK_ANGLE, ls="--", alpha=0.5)
     axs[0].set_title("Metric 1 – Shoulder / Neck")
 
     axs[1].plot(t_series,v2,color="orange")
     axs[1].axhline(THRESH_NECK,ls="--",alpha=0.5)
     axs[1].axhline(-THRESH_NECK,ls="--",alpha=0.5)
+     if mode_used == "SIDE":
+        axs[1].axhline(THRESH_TORSO_ANGLE, ls="--", alpha=0.5)
+        axs[1].axhline(-THRESH_TORSO_ANGLE, ls="--", alpha=0.5)
     axs[1].set_title("Metric 2 – Neck / Torso")
 
     axs[2].plot(t_series,v3,color="purple")
@@ -180,8 +191,6 @@ if __name__=="__main__":
         draw_panel(img,10,10,300,120)
         cv2.putText(img,"POSTURE MONITOR",(20,35),font,0.8,(0,255,255),2)
         cv2.putText(img,f"MODE: {mode}",(20,65),font,0.6,(255,255,255),2)
-
-        # ✅ CHANGED HERE
         cv2.putText(img,"F: Front View | S: Side View",(20,90),font,0.5,(230,230,230),1)
         cv2.putText(img,"Q: Quit",(20,110),font,0.5,(230,230,230),1)
 
@@ -296,3 +305,4 @@ if __name__=="__main__":
     cv2.destroyAllWindows()
 
     show_graph()
+
