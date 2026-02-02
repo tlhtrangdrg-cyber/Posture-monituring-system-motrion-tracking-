@@ -24,6 +24,7 @@ THRESH_TORSO_ANGLE = 10
 
 SMOOTH_WINDOW = 5
 DEADZONE = 0.01
+WARNING_COOLDOWN = 2
 
 # ____________HELPERS
 
@@ -76,6 +77,12 @@ def draw_progress(img, x, y, w, h, progress):
 
 def posture_color(is_bad):
     return (0,0,255) if is_bad else (0,255,0)
+def play_warning():
+    try:
+        import winsound
+        winsound.Beep(1000, 200)  # 1000 Hz, 200ms
+    except:
+        pass
 
 # ______________SKELETON
 POSE_CONNECTIONS = [
@@ -157,6 +164,7 @@ cal1,cal2,cal3=[],[],[]
 base1=base2=base3=0
 
 hist1,hist2,hist3=[],[],[]
+last_warning_time = 0
 
 #________________ MAIN
 
@@ -201,9 +209,16 @@ if __name__=="__main__":
         if DETECTION_RESULT and DETECTION_RESULT.pose_landmarks:
             lm=DETECTION_RESULT.pose_landmarks[0]
 
-            bad=False
+            bad = False
             if b1 and b2 and b3:
-                bad=any([b1[-1],b2[-1],b3[-1]])
+                bad = any([b1[-1], b2[-1], b3[-1]])
+            if mode == "SIDE" and b1 and b2:
+                bad = b1[-1] or b2[-1]
+    
+            current_time = time.time()
+            if bad and (current_time - last_warning_time) > WARNING_COOLDOWN:
+                play_warning()
+                last_warning_time = current_time
 
             draw_skeleton(img,lm,w,h,posture_color(bad),mode)
 
@@ -305,4 +320,5 @@ if __name__=="__main__":
     cv2.destroyAllWindows()
 
     show_graph()
+
 
